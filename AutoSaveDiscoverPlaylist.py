@@ -1,57 +1,17 @@
-
-import speech_recognition as sr
-import spotipy 
+import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import pyttsx3
-import os 
-
-listener = sr.Recognizer()
-
-sr.Microphone.list_microphone_names()
-
-def ouvir():
-    try:
-        with sr.Microphone(device_index=1) as source:
-            print('Listening...')
-            voice = listener.listen(source)
-            command = listener.recognize_google(voice,language='pt-BR')
-            print(command)
-            return command
-    except:
-        return 'No Sound'
-
-os.environ['SPOTIPY_CLIENT_ID'] = 'b4686a932055446796a9ba09a2bf046a'
-os.environ['SPOTIPY_CLIENT_SECRET'] = 'd11de260565b447f92224d5c5d674588'
+import os
+scope = 'playlist-read-private,playlist-read-collaborative,playlist-modify-private,playlist-modify-public'
+os.environ['SPOTIPY_CLIENT_ID'] = 'YOUR CLIENT_ID'
+os.environ['SPOTIPY_CLIENT_SECRET'] = 'YOUR CLIENT_SECRET'
 os.environ['SPOTIPY_REDIRECT_URI'] = 'https://example.com/callback'
+username = 'YOUR SPOTIFY USERNAME'
+playlist = 'YOUR PLAYLIST ID OF CHOICE'
+discover = 'YOUR DISCOVER WEEKLY PLAYLIST ID'
 
-scope = "user-read-playback-state,user-modify-playback-state"
-sp = spotipy.Spotify(client_credentials_manager=SpotifyOAuth(scope=scope))
-
-engine = pyttsx3.init()
-engine.say('This is a new test message!')
-engine.runAndWait()
-
-while True:
-    command = ouvir()
-    
-    if 'spotify play' in command.lower():
-        query = command.lower().replace('spotify play','').strip()
-
-        results = sp.search(query,1,0,"track")
-
-        nome_artista = results['tracks']['items'][0]['artists'][0]['name']
-        nome_musica = results['tracks']['items'][0]['name']
-        track_uri = results['tracks']['items'][0]['uri']
-
-        engine.say(f'Playing {nome_musica} by {nome_artista}')
-        engine.runAndWait()
-
-        sp.start_playback(uris=[track_uri])
-
-    elif 'spotify pause' in command.lower():
-        sp.pause_playback()
-    elif 'spotify continue' in command.lower():
-        sp.start_playback()
-    elif 'spotify mudar volume para' in command.lower():
-        volume = int(command.lower().replace('spotify mudar volume para','').strip())
-        sp.volume(volume)
+sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope=scope))
+tracks = sp.user_playlist_tracks(user=username,playlist_id=discover)
+items =[]
+for track in tracks['items']:
+    items.append(track['track']['uri'])
+sp.user_playlist_add_tracks(user=username,playlist_id=playlist,tracks=items)
